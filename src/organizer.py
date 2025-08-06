@@ -2,6 +2,7 @@ import os
 import shutil
 from datetime import datetime
 from pathlib import Path
+from contextlib import closing
 
 from PIL import Image
 from hachoir.metadata import extractMetadata
@@ -19,12 +20,13 @@ def get_creation_date(file_path: Path) -> datetime:
                     return datetime.strptime(date_str, '%Y:%m:%d %H:%M:%S')
         elif file_path.suffix.lower() in ['.mp4', '.mov', '.avi', '.mkv']:
             parser = createParser(str(file_path))
-            if parser:
-                metadata = extractMetadata(parser)
-                if metadata:
-                    date = metadata.get('creation_date')
-                    if date:
-                        return date
+            if parser is not None:  # Verificar explícitamente
+                with closing(parser) as p:
+                    metadata = extractMetadata(p)
+                    if metadata:
+                        date = metadata.get('creation_date')
+                        if date:
+                            return date
     except Exception:
         pass  # Fallback si error
     # Fallback: fecha de modificación del archivo
